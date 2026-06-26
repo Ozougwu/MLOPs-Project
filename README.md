@@ -1,49 +1,67 @@
-# Online Shoppers MLOps
+# Online Shoppers Purchasing Intention — MLOps Pipeline
 
 [![Powered by Kedro](https://img.shields.io/badge/powered_by-kedro-ffc900?logo=kedro)](https://kedro.org)
 
-## Overview
+MSc MLOps capstone. An end-to-end, modular, reproducible Kedro pipeline that
+predicts whether an e-commerce visitor will make a purchase (`Revenue`), using
+the **Online Shoppers Purchasing Intention** dataset (UCI, ~12,330 rows,
+~15.5 % buyers — imbalanced, so we report **recall on buyers / F1 / ROC-AUC**,
+not accuracy).
 
-This is your new Kedro project, which was generated using `kedro 1.3.1`.
+## Pipelines (each runs independently or as the full chain)
 
-Take a look at the [Kedro documentation](https://docs.kedro.org) to get started.
+| Pipeline | Requirement | What it does |
+|---|---|---|
+| `data_quality` | #1 | Great Expectations gate (8 asserts); halts on bad data |
+| `data_feat_engineering` | — | Per-row behavioural/temporal features (no leakage) |
+| `feature_store` | #1 | Persists feature groups to local parquet (`data/04_feature/`) |
+| `data_cleaning` | — | Encode/clean (learned transforms fit on train only) |
+| `data_split` | — | Stratified train/test; test held out until final eval |
+| `model_selection` | — | Cross-validated champion selection (ROC-AUC) |
+| `model_train` | #2, #3 | Train + MLflow tracking/registry + SHAP explainability |
+| `data_drift` | #5 | Evidently drift report (natural seasonal drift) |
 
-## Rules and guidelines
+## Quickstart (reproducible — uses the committed sample data)
 
-In order to get the best out of the template:
+A 1,000-row stratified **sample** (`data/01_raw/online_shoppers_sample.csv`,
+same 15.5 % buyer ratio) is committed so the pipeline runs out of the box. The
+full dataset is gitignored; see `helpers/data_download.md` to fetch it.
 
-* Don't remove any lines from the `.gitignore` file we provide
-* Make sure your results can be reproduced by following a data engineering convention
-* Don't commit data to your repository
-* Don't commit any credentials or your local configuration to your repository. Keep all your credentials and local configuration in `conf/local/`
+```bash
+# 1. Install dependencies (uv shown; plain `pip install -r requirements.txt` also works)
+uv pip install -r requirements.txt
 
-## How to install dependencies
+# 2. (First time only) initialise MLflow config — a committed conf/base/mlflow.yml
+#    already provides a working default, so this is optional.
+kedro mlflow init
 
-Declare any dependencies in `requirements.txt` for `pip` installation.
-
-To install them, run:
-
-```
-pip install -r requirements.txt
-```
-
-## How to run your Kedro pipeline
-
-You can run your Kedro project with:
-
-```
+# 3. Run the full pipeline (data_quality -> ... -> model_train -> data_drift)
 kedro run
+
+# 4. Run a single pipeline in isolation (e.g. just the data quality gate)
+kedro run --pipeline=data_quality
+kedro run --pipeline=data_drift
+
+# 5. Inspect experiments / models
+mlflow ui            # http://127.0.0.1:5000
 ```
 
-## How to test your Kedro project
+To run against the full dataset, point the `online_shoppers_raw` catalog entry
+at `online_shoppers.csv` instead of the sample (see `conf/base/catalog.yml`).
 
-Have a look at the file `tests/test_run.py` for instructions on how to write your tests. You can run your tests as follows:
+## Tests (#6)
 
+```bash
+pytest          # node + pipeline tests with coverage
+ruff check .    # lint
 ```
-pytest
-```
 
-You can configure the coverage threshold in your project's `pyproject.toml` file under the `[tool.coverage.report]` section.
+## Reproducibility notes
+
+* MLflow config is committed at `conf/base/mlflow.yml` (no secrets); any local
+  overrides/credentials stay in `conf/local/` (gitignored).
+* Every dataset goes through the Kedro catalog — no hardcoded paths in nodes.
+* Package versions are pinned in `requirements.txt`.
 
 
 ## Project dependencies

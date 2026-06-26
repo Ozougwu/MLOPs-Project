@@ -1,0 +1,32 @@
+# Project parameters — Online Shoppers MLOps
+
+target_column: Revenue
+
+# ── Split (test sealed; CV on train handles validation) ───────
+split:
+  test_fraction: 0.2
+  random_state: 42
+
+# ── Model selection (cross-validated on train only) ───────────
+model_selection:
+  cv_folds: 5
+  scoring: roc_auc          # threshold-independent; imbalanced data
+  random_state: 42
+  class_weight: balanced    # handle ~15.5% buyer imbalance, no synthetic data
+
+# ── Candidate hyperparameters (kept modest; Optuna is a stretch) ─
+candidates:
+  logistic_regression:
+    max_iter: 1000
+    C: 1.0
+  random_forest:
+    n_estimators: 200
+    max_depth: 12
+  gradient_boosting:
+    n_estimators: 200
+    max_depth: 3
+    learning_rate: 0.1
+
+# ── MLflow ────────────────────────────────────────────────────
+mlflow:
+  registered_model_name: online_shoppers_champion

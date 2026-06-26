@@ -15,6 +15,12 @@ data/**
 # except their sub-folders
 !data/**/
 
+# keep the full raw dataset ignored (too large; graders use the sample)
+data/01_raw/online_shoppers.csv
+
+# except the committed sample data graders use to run the pipeline
+!data/01_raw/online_shoppers_sample.csv
+
 # also keep all .gitkeep files
 !.gitkeep
 
@@ -160,3 +166,9 @@ venv.bak/
 
 # mlflow local runs
 mlruns/*
+
+mlruns/
+
+mlruns/
+
+.claude/

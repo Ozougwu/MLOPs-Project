@@ -1,0 +1,7 @@
+# Serving-only deps (kept lean; no Kedro/GX/SHAP in the image).
+fastapi==0.136.0
+uvicorn==0.44.0
+pydantic==2.13.3
+mlflow==3.11.1
+scikit-learn==1.5.2
+pandas==2.3.3
