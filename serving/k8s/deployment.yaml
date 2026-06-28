@@ -1,0 +1,51 @@
+# Deployment for the Online Shoppers serving API (creative extension: K8s).
+#
+# Runs the same `online-shoppers-serving` image the Dockerfile builds. The
+# container is self-contained -- it loads the PORTABLE champion model baked into
+# the image -- so no volumes or external model store are required, which keeps
+# the deployment reproducible. Liveness/readiness probes hit the same /health
+# and /ready endpoints the API already exposes, so Kubernetes restarts a hung
+# pod (liveness) and withholds traffic until the model is loaded (readiness).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: online-shoppers-serving
+  labels:
+    app: online-shoppers-serving
+spec:
+  replicas: 2                       # start with 2; the HPA scales from here
+  selector:
+    matchLabels:
+      app: online-shoppers-serving
+  template:
+    metadata:
+      labels:
+        app: online-shoppers-serving
+    spec:
+      containers:
+        - name: serving
+          image: online-shoppers-serving:latest
+          imagePullPolicy: IfNotPresent   # use the locally built image (KIND/Desktop)
+          ports:
+            - containerPort: 8000
+          # Resource requests/limits are what the HPA's CPU target is measured
+          # against -- without a request, CPU-percent autoscaling has no baseline.
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /ready          # 503 until the model finishes loading
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10

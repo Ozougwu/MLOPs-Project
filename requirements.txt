@@ -1,0 +1,37 @@
+# Online Shoppers MLOps — pinned for reproducibility (brief: "everyone should
+# produce the same results"). Versions match the environment the pipelines,
+# tests, drift report, and serving image were all built and verified against.
+# Install:  uv pip install -r requirements.txt   (or: pip install -r requirements.txt)
+
+# ── Core orchestration (Kedro + catalog datasets) ────────────────────────────
+kedro==1.3.1
+kedro-datasets==9.4.0
+kedro-mlflow==2.0.2
+
+# ── Experiment tracking, model registry, explainability (#2, #3) ─────────────
+mlflow==3.11.1
+shap==0.52.0
+matplotlib==3.10.0
+
+# ── Data quality + drift (#1, #5) ────────────────────────────────────────────
+great-expectations==1.16.1
+evidently==0.7.21
+
+# ── Modelling + data stack ───────────────────────────────────────────────────
+scikit-learn==1.5.2
+pandas==2.3.3
+numpy==2.3.5
+pyarrow==23.0.1            # parquet engine for the feature store / model input
+
+# ── Serving (#4) — also pinned in serving/requirements.txt for the image ─────
+fastapi==0.136.0
+uvicorn==0.44.0
+pydantic==2.13.3
+
+# ── Dev: tests, lint, notebooks (EDA kept per brief) ─────────────────────────
+pytest==9.1.1
+pytest-cov==7.1.0
+ruff==0.15.19
+ipython==8.39.0
+jupyterlab==4.5.6
+notebook==7.5.5

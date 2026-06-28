@@ -1,0 +1,21 @@
+# Service exposing the serving Deployment inside the cluster (creative ext: K8s).
+#
+# A stable virtual IP + DNS name (online-shoppers-serving) load-balances across
+# whatever pod replicas the Deployment/HPA currently runs, so callers never need
+# to know individual pod IPs. Type NodePort makes it reachable from the host for
+# a local KIND / Docker-Desktop demo; in a managed cluster this would be a
+# LoadBalancer or sit behind an Ingress.
+apiVersion: v1
+kind: Service
+metadata:
+  name: online-shoppers-serving
+  labels:
+    app: online-shoppers-serving
+spec:
+  type: NodePort
+  selector:
+    app: online-shoppers-serving      # routes to pods with this label
+  ports:
+    - port: 80                         # service port (in-cluster)
+      targetPort: 8000                 # container port (uvicorn)
+      nodePort: 30080                  # host-reachable port for the local demo

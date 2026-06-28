@@ -1,0 +1,28 @@
+Kubernetes deployment evidence — Online Shoppers serving (creative extension)
+Captured: Fri Jun 26 16:08:40 GMTDT 2026
+
+### Deployment (2/2 ready) ###
+NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
+online-shoppers-serving   2/2     2            2           6m34s
+
+### Pods (load-balanced replicas) ###
+NAME                                       READY   STATUS    RESTARTS        AGE     IP          NODE             NOMINATED NODE   READINESS GATES
+online-shoppers-serving-7dd96f7cb4-d9lmj   1/1     Running   1 (5m26s ago)   6m33s   10.1.0.14   docker-desktop   <none>           <none>
+online-shoppers-serving-7dd96f7cb4-xrgfh   1/1     Running   1 (5m26s ago)   6m33s   10.1.0.15   docker-desktop   <none>           <none>
+
+### Service (NodePort 30080) ###
+NAME                      TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+online-shoppers-serving   NodePort   10.106.30.250   <none>        80:30080/TCP   6m36s
+
+### HorizontalPodAutoscaler (live CPU vs 60% target) ###
+NAME                      REFERENCE                            TARGETS        MINPODS   MAXPODS   REPLICAS   AGE
+online-shoppers-serving   Deployment/online-shoppers-serving   cpu: 21%/60%   2         6         2          6m36s
+
+### Per-pod resource usage (metrics-server) ###
+NAME                                       CPU(cores)   MEMORY(bytes)   
+online-shoppers-serving-7dd96f7cb4-d9lmj   5m           204Mi           
+online-shoppers-serving-7dd96f7cb4-xrgfh   6m           188Mi           
+
+### Live prediction through cluster Service ###
+# POST /predict  body: {"rows": [{"PageValues": 25.0, "ProductRelated": 50}]}
+{"predictions":[{"predicted_revenue":0,"buyer_probability":0.3201019149070406}]}

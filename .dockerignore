@@ -1,0 +1,22 @@
+# Keep the serving image lean: only app + champion_model dir + feature schema
+# are COPYed in (see serving/Dockerfile). Everything else is excluded.
+.git
+.venv*
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+notebooks
+docs
+tests
+src
+conf
+helpers
+.claude
+data/01_raw
+data/02_intermediate
+data/03_primary
+data/04_feature
+data/05_model_input
+data/07_model_output
+data/08_reporting

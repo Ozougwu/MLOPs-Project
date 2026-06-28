@@ -1,0 +1,3 @@
+"""Online Shoppers MLOps"""
+
+__version__ = "0.1"

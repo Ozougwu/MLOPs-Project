@@ -1,0 +1,26 @@
+# HorizontalPodAutoscaler for the serving Deployment (creative extension: K8s).
+#
+# Scales replicas between 2 and 6 based on average CPU utilisation. Purchase-
+# intent scoring is bursty (traffic spikes during the Nov/Dec season the drift
+# study highlights), so elastic capacity matches the seasonal load pattern: the
+# HPA adds pods when CPU crosses 60% of the requested 100m and scales back down
+# when the spike passes. This requires the CPU *requests* set in deployment.yaml
+# and a running metrics-server in the cluster.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: online-shoppers-serving
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: online-shoppers-serving
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60

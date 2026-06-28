@@ -1,0 +1,133 @@
+# Data Catalog — Online Shoppers MLOps
+# Each dataset flows through the Kedro layers (no hardcoded paths in nodes).
+
+# ── Raw (01_raw) ──────────────────────────────────────────────
+online_shoppers_raw:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/online_shoppers.csv
+
+# ── Validated (GX gate output, 02_intermediate) ───────────────
+online_shoppers_validated:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/online_shoppers_validated.parquet
+
+# ── Featured / Silver (03_primary) ────────────────────────────
+online_shoppers_featured:
+  type: pandas.ParquetDataset
+  filepath: data/03_primary/online_shoppers_featured.parquet
+
+# ── Feature store: local-parquet feature groups (04_feature) ──
+feature_group_numerical:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/feature_group_numerical.parquet
+
+feature_group_categorical:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/feature_group_categorical.parquet
+
+feature_group_target:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/feature_group_target.parquet
+
+# ── Model input: cleaned + encoded table (05_model_input) ─────
+model_input_table:
+  type: pandas.ParquetDataset
+  filepath: data/05_model_input/model_input_table.parquet
+
+# ── Train/test split (test SEALED until final eval) ───────────
+X_train:
+  type: pandas.ParquetDataset
+  filepath: data/05_model_input/X_train.parquet
+X_test:
+  type: pandas.ParquetDataset
+  filepath: data/05_model_input/X_test.parquet
+y_train:
+  type: pickle.PickleDataset
+  filepath: data/05_model_input/y_train.pkl
+y_test:
+  type: pickle.PickleDataset
+  filepath: data/05_model_input/y_test.pkl
+
+# ── Model selection: champion name + CV scores (08_reporting) ──
+champion_config:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: json.JSONDataset
+    filepath: data/08_reporting/champion_config.json
+
+# ── Trained champion: registered as a model version (#2) ──────
+champion_model:
+  type: kedro_mlflow.io.models.MlflowModelTrackingDataset
+  flavor: mlflow.sklearn
+  save_args:
+    registered_model_name: online_shoppers_champion
+
+# ── Portable local copy of the champion (serving loads THIS) ──
+# A self-contained MLflow model dir with no absolute paths, so the image /
+# any clone can `mlflow.sklearn.load_model(<dir>)` regardless of where it was
+# trained. Versioning still lives in the registry above.
+champion_model_local:
+  type: kedro_mlflow.io.models.MlflowModelLocalFileSystemDataset
+  flavor: mlflow.sklearn
+  filepath: data/06_models/champion_model
+
+# ── Test metrics (#3) -> reporting + MLflow artifact ──────────
+champion_metrics:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: json.JSONDataset
+    filepath: data/08_reporting/champion_metrics.json
+
+# ── SHAP summary plot (#3) -> reporting + MLflow artifact ─────
+shap_summary_plot:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: matplotlib.MatplotlibDataset
+    filepath: data/08_reporting/shap_summary_plot.png
+
+# ── Trained feature schema (serving/training sync) ────────────
+feature_columns:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: json.JSONDataset
+    filepath: data/06_models/feature_columns.json
+
+# ── Batch predictions from model_predict (07_model_output) ────
+batch_predictions:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/batch_predictions.parquet
+
+# ── Data drift (#5): seasonal reference vs current ────────────
+# HTML report -> reporting + MLflow artifact (full Evidently visual).
+data_drift_report:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: text.TextDataset
+    filepath: data/08_reporting/data_drift_report.html
+    fs_args:
+      open_args_save:
+        encoding: utf-8        # Evidently HTML has non-cp1252 chars (Windows)
+      open_args_load:
+        encoding: utf-8
+
+# Per-column drift CSV -> reporting + MLflow artifact (CI-gate friendly).
+drift_result:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/08_reporting/drift_result.csv
+
+# ── Optuna HPO (creative extension) -> reporting + MLflow ─────
+# Full result (tuned params, baseline vs tuned score, importances) as JSON.
+optimisation_result:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: json.JSONDataset
+    filepath: data/08_reporting/optuna_optimisation_result.json
+
+# Hyperparameter-importance bar chart (report appendix figure).
+optuna_importance_plot:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: matplotlib.MatplotlibDataset
+    filepath: data/08_reporting/optuna_importance_plot.png
